@@ -1,4 +1,3 @@
- #define _GNU_SOURCE  
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -11,6 +10,12 @@
 
 #include "netaux.h"
 #include "queue.h"
+
+void usage() {
+  fputs("Usage: ./getip [interface]\n",stderr);
+  exit(EXIT_FAILURE);
+}
+
 
 struct netface {
   struct netface  *nef_next; 
@@ -31,7 +36,7 @@ void freenetface(struct netface nef) {
 
 void iface_add(struct netface *nef, struct ifaddrs *ifa) {
   struct netface *last = nef;
-  
+ 
   for(struct netface *n = nef; n != NULL; n = n->nef_next) {
     if( strcmp(n->nef_name, ifa->ifa_name) == 0 ) {
       queue_add(n->nef_q, ifa);
@@ -85,22 +90,25 @@ void print_netface(struct netface *nef) {
 
 
 
-int main() {
+int main(int args, char *argv[]) {
+  if(args>2) usage();
+  char *iface = (args==2)? argv[1] : NULL;
+
   struct ifaddrs *ifaddr;
-   
   if (getifaddrs(&ifaddr) == -1) ERROR("getifaddrs");
 
   struct netface nef;
   nef.nef_next = NULL;
   nef.nef_q  = queue_new();
-  nef.nef_name = ifaddr->ifa_name;
+  nef.nef_name = (args==2)? iface : ifaddr->ifa_name;
   
   
   for (struct ifaddrs *ifa = ifaddr; ifa != NULL;
        ifa = ifa->ifa_next) {
     
     if (ifa->ifa_addr == NULL) continue;
-    iface_add(&nef, ifa);
+    if( !iface || strcmp(iface, ifa->ifa_name) == 0)
+      iface_add(&nef, ifa);
   }    
   print_netface(&nef);
   freeifaddrs(ifaddr);

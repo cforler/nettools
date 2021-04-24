@@ -3,10 +3,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
 
-
-#define ERROR(msg) { perror((msg)); exit(errno); }
+#include "netaux.h"
 
 void usage() {
   fputs("Usage: ./getip [-a] <host>\n",stderr);
@@ -25,25 +23,6 @@ void init_addrinfo(struct addrinfo *p) {
 }
 
 
-char *addrtostr(struct sockaddr *sa) {
-  char *ip = malloc(NI_MAXHOST);
-  memset(ip,0,NI_MAXHOST);
-
-  const char *s;
-  switch(sa->sa_family)  {
-  case AF_INET: s = inet_ntop(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr),
-                              ip, NI_MAXHOST); break;
-    
-  case AF_INET6: s = inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sa)->sin6_addr),
-                               ip, NI_MAXHOST); break;
-  default: errno=EFAULT; return NULL;
-  }
-  
-  if(s) return ip;
-  
-  free(ip);
-  return NULL;
-}
 
 int main(int args, char *argv[]){
   if(args < 2 || args > 3)  usage();
